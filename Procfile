@@ -1,1 +1,1 @@
-worker: python study_bot.py
+web: python study_bot.py
