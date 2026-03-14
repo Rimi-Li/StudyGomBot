@@ -178,13 +178,13 @@ def get_time(user_id, channel, today_only=False):
     query = """
     SELECT SUM(duration)
     FROM study_logs
-    WHERE user_id=? AND channel=?
+    WHERE user_id=%s AND channel=%s
     """
 
     params = [user_id, channel]
 
     if today_only:
-        query += " AND date=?"
+        query += " AND date=%s"
         params.append(now().date().isoformat())
 
     rows = db_execute(query, params, True)
@@ -203,7 +203,7 @@ def save_log(user_id, user_name, channel, seconds, date):
 
     db_execute("""
     INSERT INTO study_logs (user_id, user_name, channel, duration, date)
-    VALUES (?, ?, ?, ?, ?)
+    VALUES (%s, %s, %s, %s, %s)
     """, (user_id, user_name, channel, seconds, date))
 
 # 세션 종료
@@ -391,7 +391,7 @@ async def 삭제(ctx):
     rows = db_execute("""
     SELECT id
     FROM study_logs
-    WHERE user_id=? AND channel=? AND duration=? AND date=?
+    WHERE user_id=%s AND channel=%s AND duration=%s AND date=%s
     ORDER BY id DESC
     LIMIT 1
     """, (user_id, channel, duration, date), True)
@@ -402,7 +402,7 @@ async def 삭제(ctx):
 
     log_id = rows[0][0]
 
-    db_execute("DELETE FROM study_logs WHERE id=?", (log_id,))
+    db_execute("DELETE FROM study_logs WHERE id=%s", (log_id,))
 
     last_deleted_log = last_log
     last_log = None
@@ -481,7 +481,7 @@ async def 배키초기화(ctx):
     today = now().date().isoformat()
 
     last_reset_backup = db_execute(
-        "SELECT user_id,user_name,channel,duration,date FROM study_logs WHERE user_id=? AND date=?",
+        "SELECT user_id,user_name,channel,duration,date FROM study_logs WHERE user_id=%s AND date=%s",
         (member.id, today), True
     )
 
@@ -510,7 +510,7 @@ async def 초기화(ctx):
         (today,), True
     )
 
-    db_execute("DELETE FROM study_logs WHERE date=?", (today,))
+    db_execute("DELETE FROM study_logs WHERE date=%s", (today,))
 
     msg = ["⚠️ 오늘 전체 기록이 초기화되었다 곰"]
 
