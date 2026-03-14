@@ -143,7 +143,7 @@ def get_text_channel(guild):
 # DB
 def db_execute(query, params=(), fetch=False):
 
-    conn = psycopg2.connect(os.getenv("DATABASE_URL"))
+    conn = psycopg2.connect(os.getenv("DATABASE_URL"), sslmode="require")
     cur = conn.cursor()
 
     cur.execute(query, params)
@@ -189,7 +189,10 @@ def get_time(user_id, channel, today_only=False):
 
     rows = db_execute(query, params, True)
 
-    total = rows[0][0] or 0
+    if not rows or rows[0][0] is None:
+        total = 0
+    else:
+        total = rows[0][0]
 
     for session in active_sessions.values():
 
