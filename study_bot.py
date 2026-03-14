@@ -450,12 +450,12 @@ async def 멜마초기화(ctx):
     today = now().date().isoformat()
 
     last_reset_backup = db_execute(
-        "SELECT user_id,user_name,channel,duration,date FROM study_logs WHERE user_id=? AND date=?",
+        "SELECT user_id,user_name,channel,duration,date FROM study_logs WHERE user_id=%s AND date=%s",
         (member.id, today), True
     )
 
     db_execute(
-        "DELETE FROM study_logs WHERE user_id=? AND date=?",
+        "DELETE FROM study_logs WHERE user_id=%s AND date=%s",
         (member.id, today)
     )
 
@@ -486,7 +486,7 @@ async def 배키초기화(ctx):
     )
 
     db_execute(
-        "DELETE FROM study_logs WHERE user_id=? AND date=?",
+        "DELETE FROM study_logs WHERE user_id=%s AND date=%s",
         (member.id, today)
     )
 
@@ -506,7 +506,7 @@ async def 초기화(ctx):
     today = now().date().isoformat()
 
     last_reset_backup = db_execute(
-        "SELECT user_id,user_name,channel,duration,date FROM study_logs WHERE date=?",
+        "SELECT user_id,user_name,channel,duration,date FROM study_logs WHERE date=%s",
         (today,), True
     )
 
@@ -544,7 +544,7 @@ async def 초기화취소(ctx):
 
         db_execute("""
         INSERT INTO study_logs (user_id,user_name,channel,duration,date)
-        VALUES (?,?,?,?,?)
+        VALUES (%s,%s,%s,%s,%s)
         """, row)
 
     last_reset_backup = None
