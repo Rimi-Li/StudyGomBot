@@ -1,9 +1,11 @@
 import os
-import sqlite3
+import psycopg2
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 import discord
 from discord.ext import commands, tasks
+import threading
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
 # -----------------------------
 # 설정
@@ -12,8 +14,6 @@ from discord.ext import commands, tasks
 TOKEN = os.getenv("DISCORD_TOKEN")
 
 KST = ZoneInfo("Asia/Seoul")
-
-DB_FILE = "study_logs.db"
 
 TEXT_CHANNEL_NAME = "채팅"
 
@@ -143,7 +143,7 @@ def get_text_channel(guild):
 # DB
 def db_execute(query, params=(), fetch=False):
 
-    conn = sqlite3.connect(DB_FILE)
+    conn = psycopg2.connect(os.getenv("DATABASE_URL"))
     cur = conn.cursor()
 
     cur.execute(query, params)
@@ -163,8 +163,8 @@ def init_db():
 
     db_execute("""
     CREATE TABLE IF NOT EXISTS study_logs (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER,
+        id SERIAL PRIMARY KEY,
+        user_id BIGINT,
         user_name TEXT,
         channel TEXT,
         duration INTEGER,
@@ -656,7 +656,7 @@ async def midnight_ranking():
 @bot.event
 async def on_ready():
 
-    print("Study Bot 실행됨")
+    print("안녕! 난 Study_Gom이다 곰! 🐻")
 
     init_db()
 
@@ -666,5 +666,22 @@ async def on_ready():
     if not night_message.is_running():
         night_message.start()
 
+def fake_web_server():
+
+    class Handler(BaseHTTPRequestHandler):
+
+        def log_message(self, format, *args):
+            return
+
+        def do_GET(self):
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(b"OK")
+
+    port = int(os.environ.get("PORT", 8000))
+    server = HTTPServer(("0.0.0.0", port), Handler)
+    server.serve_forever()
+
+threading.Thread(target=fake_web_server, daemon=True).start()
 
 bot.run(TOKEN)
