@@ -1,5 +1,6 @@
 import os
 import psycopg2
+import urllib.parse as urlparse
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 import discord
@@ -143,16 +144,21 @@ def get_text_channel(guild):
 
 # DB
 def db_execute(query, params=(), fetch=False):
+    url = urlparse.urlparse(os.getenv("DATABASE_URL"))
 
-    conn = psycopg2.connect(os.getenv("DATABASE_URL"), sslmode="require", options='-c search_path=public')
+    conn = psycopg2.connect(
+        dbname=url.path[1:],
+        user=url.username,
+        password=url.password,
+        host=url.hostname,
+        port=url.port,
+        sslmode="require"
+    )
+
     cur = conn.cursor()
-
     cur.execute(query, params)
 
-    result = None
-
-    if fetch:
-        result = cur.fetchall()
+    result = cur.fetchall() if fetch else None
 
     conn.commit()
     conn.close()
