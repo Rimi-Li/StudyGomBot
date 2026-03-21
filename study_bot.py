@@ -247,7 +247,7 @@ async def check_study_milestone(member):
     if study >= 14400 and 4 not in alerts:
         alerts.add(4)
         await ch.send(
-            f"""{user} 4시간 집중 성곰!! 🐻⭐
+            f"""{user} 4시간 집중 성곰!! 🐻👍
 이대로 8시간 가쟈 곰..!!"""
         )
 
@@ -348,7 +348,7 @@ async def send_user_time(ctx, user_name):
         await ctx.send("사용자를 찾지 못했습니다.")
         return
 
-    study = get_time(member.id, STUDY_CHANNEL_NAME, True)
+    study = get_time(member.id, STUDY_CHANNEL_NAME)
     rest = get_time(member.id, REST_CHANNEL_NAME, True)
 
     await ctx.send(
@@ -367,7 +367,7 @@ async def 지금(ctx):
         if not member:
             continue
 
-        study = get_time(member.id, STUDY_CHANNEL_NAME, True)
+        study = get_time(member.id, STUDY_CHANNEL_NAME)
         rest = get_time(member.id, REST_CHANNEL_NAME, True)
 
         lines.append(
@@ -469,7 +469,7 @@ async def reset_user_today(ctx, user_name):
         WHERE user_id=%s AND date=%s
     """, (member.id, today))
 
-    study = get_time(member.id, STUDY_CHANNEL_NAME, True)
+    study = get_time(member.id, STUDY_CHANNEL_NAME)
     rest = get_time(member.id, REST_CHANNEL_NAME, True)
 
     await ctx.send(
@@ -509,7 +509,7 @@ async def 초기화(ctx):
         if not member:
             continue
 
-        study = get_time(member.id, STUDY_CHANNEL_NAME, True)
+        study = get_time(member.id, STUDY_CHANNEL_NAME)
         rest = get_time(member.id, REST_CHANNEL_NAME, True)
 
         msg.append(
@@ -542,7 +542,7 @@ async def 초기화취소(ctx):
         if not member:
             continue
 
-        study = get_time(member.id, STUDY_CHANNEL_NAME, True)
+        study = get_time(member.id, STUDY_CHANNEL_NAME)
         rest = get_time(member.id, REST_CHANNEL_NAME, True)
 
         msg.append(
@@ -601,7 +601,7 @@ async def midnight_ranking():
         if not member:
             continue
 
-        study = get_time(member.id, STUDY_CHANNEL_NAME, True)
+        study = get_time(member.id, STUDY_CHANNEL_NAME)
         rest = get_time(member.id, REST_CHANNEL_NAME, True)
 
         result.append((name, study, rest))
