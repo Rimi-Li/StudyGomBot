@@ -198,7 +198,7 @@ async def end_session(member):
 
     last_log = (user_id, user_name, channel, duration, date)
 
-    total = get_time(user_id, channel)
+    total = get_time(user_id, channel, True)
     ch = get_text_channel(member.guild)
 
     await ch.send(
@@ -419,7 +419,7 @@ async def 삭제(ctx):
     last_deleted_log = last_log
     last_log = None
 
-    total = get_time(user_id, channel)
+    total = get_time(user_id, channel, True)
 
     await ctx.send(
         f"⛔기록 삭제 완료\n>> {user_name} {channel} {format_time(total)} (누적)"
@@ -441,7 +441,7 @@ async def 복구(ctx):
     last_log = last_deleted_log
     last_deleted_log = None
 
-    total = get_time(user_id, channel)
+    total = get_time(user_id, channel, True)
 
     await ctx.send(
         f"♻️기록 복구 완료\n>> {user_name} {channel} {format_time(duration)} (누적 {format_time(total)})"
