@@ -167,9 +167,9 @@ def get_time(user_id, channel, today_only=False):
     if active_rows:
         start_time, active_channel = active_rows[0]
         start_time = start_time.replace(tzinfo=KST)
-        if active_channel == channel:
-            if not today_only or start_time.date() == now().date():
-                total += int((now() - start_time).total_seconds())
+
+        if active_channel == channel and start_time.date() == now().date():
+            total += int((now() - start_time).total_seconds())
 
     return total
 
@@ -649,6 +649,9 @@ async def on_ready():
     print("안녕! 난 Study_Gom이다 곰! 🐻")
 
     init_db()
+
+    db_execute("DELETE FROM active_sessions")
+    active_sessions.clear()
 
     if not midnight_ranking.is_running():
         midnight_ranking.start()
