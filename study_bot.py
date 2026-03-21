@@ -469,6 +469,8 @@ async def reset_user_today(ctx, user_name):
         WHERE user_id=%s AND date=%s
     """, (member.id, today))
 
+    study_alerts[user_name].clear()
+
     study = get_time(member.id, STUDY_CHANNEL_NAME)
     rest = get_time(member.id, REST_CHANNEL_NAME, True)
 
