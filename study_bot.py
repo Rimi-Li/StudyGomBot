@@ -172,6 +172,15 @@ def init_db():
     )
     """)
 
+    db_execute("""
+    CREATE TABLE IF NOT EXISTS active_sessions (
+        user_id BIGINT PRIMARY KEY,
+        user_name TEXT,
+        channel TEXT,
+        start TIMESTAMP
+    )
+    """)
+
 # 시간 계산
 def get_time(user_id, channel, today_only=False):
 
@@ -194,10 +203,14 @@ def get_time(user_id, channel, today_only=False):
     else:
         total = rows[0][0]
 
-    for session in active_sessions.values():
+    rows = db_execute("""
+    SELECT start, channel FROM active_sessions WHERE user_id=%s
+    """, (user_id,), True)
 
-        if session["user_id"] == user_id and session["channel"] == channel:
-            total += int((now() - session["start"]).total_seconds())
+    if rows:
+        start_time, ch = rows[0]
+        if ch == channel:
+            total += int((now() - start_time).total_seconds())
 
     return total
 
@@ -230,6 +243,7 @@ async def end_session(member):
     date = session["start"].date().isoformat()
 
     save_log(user_id, user_name, channel, duration, date)
+    db_execute("DELETE FROM active_sessions WHERE user_id=%s", (user_id,))
 
     last_log = (user_id, user_name, channel, duration, date)
 
@@ -259,6 +273,13 @@ async def on_voice_state_update(member, before, after):
             "name": member.display_name,
             "user_id": member.id
         }
+
+        db_execute("""
+        INSERT INTO active_sessions (user_id, user_name, channel, start)
+        VALUES (%s, %s, %s, %s)
+        ON CONFLICT (user_id) DO UPDATE
+        SET channel=%s, start=%s
+        """, (member.id, member.display_name, after_name, now(), after_name, now()))
 
         if after_name == "📖 열공":
 
@@ -668,6 +689,18 @@ async def on_ready():
 
     if not night_message.is_running():
         night_message.start()
+    
+    rows = db_execute("""
+    SELECT user_id, user_name, channel, start FROM active_sessions
+    """, fetch=True)
+
+    for user_id, user_name, channel, start in rows:
+        active_sessions[user_id] = {
+            "user_id": user_id,
+            "name": user_name,
+            "channel": channel,
+            "start": start
+        }
 
 def fake_web_server():
 
@@ -678,8 +711,13 @@ def fake_web_server():
 
         def do_GET(self):
             self.send_response(200)
+            self.send_header("Content-type", "text/plain")
             self.end_headers()
-            self.wfile.write(b"OK")
+            self.wfile.write(b"StudyGomBot alive")
+        
+        def do_HEAD(self):
+            self.send_response(200)
+            self.end_headers()
 
     port = int(os.environ.get("PORT", 8000))
     server = HTTPServer(("0.0.0.0", port), Handler)
