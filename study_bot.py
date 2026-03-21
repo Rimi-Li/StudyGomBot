@@ -166,6 +166,7 @@ def get_time(user_id, channel, today_only=False):
 
     if active_rows:
         start_time, active_channel = active_rows[0]
+        start_time = start_time.replace(tzinfo=KST)
         if active_channel == channel:
             total += int((now() - start_time).total_seconds())
 
@@ -179,7 +180,11 @@ async def end_session(member):
     if not session:
         return
 
-    duration = int((now() - session["start"]).total_seconds())
+    start = session["start"]
+    if start.tzinfo is None:
+        start = start.replace(tzinfo=KST)
+
+    duration = int((now() - start).total_seconds())
     if duration <= 0:
         return
 
@@ -651,6 +656,9 @@ async def on_ready():
     """, fetch=True)
 
     for user_id, user_name, channel, start in rows:
+        if start.tzinfo is None:
+            start = start.replace(tzinfo=KST)
+
         active_sessions[user_id] = {
             "user_id": user_id,
             "name": user_name,
