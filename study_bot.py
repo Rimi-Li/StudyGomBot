@@ -352,9 +352,7 @@ async def send_user_time(ctx, user_name):
     rest = get_time(member.id, REST_CHANNEL_NAME, True)
 
     await ctx.send(
-        f"""{user_name}
-| 📖 열공 {format_time(study)} |
-| ☘️ 휴식 {format_time(rest)} |"""
+        f"""{user_name} | 📖 열공 {format_time(study)} | ☘️ 휴식 {format_time(rest)} |"""
     )
 
 
