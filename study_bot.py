@@ -560,37 +560,12 @@ async def on_command_error(ctx, error):
     print("명령어 에러:", repr(error))
     await ctx.send(f"명령어 처리 중 오류가 났다 곰: {error}")
 
-# 정시 메시지
-@tasks.loop(minutes=1)
-async def night_message():
-    global last_night_message
-
-    n = now()
-
-    if n.hour != 23 or n.minute != 0:
-        return
-
-    if last_night_message == n.date():
-        return
-
-    guild = bot.guilds[0] if bot.guilds else None
-    if not guild:
-        return
-
-    ch = get_text_channel(guild)
-    await ch.send(
-        """오늘도 공부 수고했다 곰!
-이제 푹 쉬어라 곰 :) 🐻🌙"""
-    )
-
-    last_night_message = n.date()
-
-
+#랭킹 메시지
 @tasks.loop(minutes=1)
 async def midnight_ranking():
     n = now()
 
-    if n.hour != 0 or n.minute != 0:
+    if n.hour != 23 or n.minute != 0:
         return
 
     guild = bot.guilds[0] if bot.guilds else None
@@ -639,6 +614,31 @@ async def midnight_ranking():
     await ch.send("\n".join(msg))
 
     study_alerts.clear()
+
+# 정시 메시지
+@tasks.loop(minutes=1)
+async def night_message():
+    global last_night_message
+
+    n = now()
+
+    if n.hour != 23 or n.minute != 0:
+        return
+
+    if last_night_message == n.date():
+        return
+
+    guild = bot.guilds[0] if bot.guilds else None
+    if not guild:
+        return
+
+    ch = get_text_channel(guild)
+    await ch.send(
+        """오늘도 공부 수고했곰!
+이제 푹 쉬어라 곰 :) 🐻🌙"""
+    )
+
+    last_night_message = n.date()
 
 # 봇 시작
 @bot.event
