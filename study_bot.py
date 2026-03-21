@@ -168,7 +168,8 @@ def get_time(user_id, channel, today_only=False):
         start_time, active_channel = active_rows[0]
         start_time = start_time.replace(tzinfo=KST)
         if active_channel == channel:
-            total += int((now() - start_time).total_seconds())
+            if not today_only or start_time.date() == now().date():
+                total += int((now() - start_time).total_seconds())
 
     return total
 
