@@ -28,6 +28,7 @@ TARGET_USERS = ["멜마", "배키"]
 intents = discord.Intents.default()
 intents.message_content = True
 intents.voice_states = True
+intents.members = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
@@ -388,6 +389,10 @@ async def 지금(ctx):
             f"{name} | 📖 열공 {format_time(study)} | ☘️ 휴식 {format_time(rest)}"
         )
 
+    if not lines:
+        await ctx.send("대상 사용자를 찾지 못했다 곰")
+        return
+
     await ctx.send("\n".join(lines))
 
 
@@ -590,6 +595,11 @@ async def 초기화취소(ctx):
         )
 
     await ctx.send("\n".join(msg))
+
+@bot.event
+async def on_command_error(ctx, error):
+    print("명령어 에러:", repr(error))
+    await ctx.send(f"명령어 처리 중 오류가 났다 곰: {error}")
 
 # 11PM 스터디 종료
 @tasks.loop(minutes=1)
