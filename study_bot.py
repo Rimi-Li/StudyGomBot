@@ -144,7 +144,7 @@ def get_text_channel(guild):
 # DB
 def db_execute(query, params=(), fetch=False):
 
-    conn = psycopg2.connect(os.getenv("DATABASE_URL"), sslmode="require")
+    conn = psycopg2.connect(os.getenv("DATABASE_URL"), sslmode="require", options='-c search_path=public')
     cur = conn.cursor()
 
     cur.execute(query, params)
@@ -320,15 +320,14 @@ async def on_voice_state_update(member, before, after):
             "user_id": member.id
         }
 
+        db_execute("""
+        INSERT INTO active_sessions (user_id, user_name, channel, start)
+        VALUES (%s, %s, %s, %s)
+        ON CONFLICT (user_id) DO UPDATE
+        SET channel=%s, start=%s
+        """, (member.id, member.display_name, after_name, now(), after_name, now()))
+
         if after_name == "📖 열공":
-            ch = get_text_channel(member.guild)
-
-            await ch.send(
-                f"{member.display_name} 공부 시작! 📚\n오늘 목표까지 달려보자 곰! 🐻🔥"
-            )
-
-            await check_study_milestone(member)
-
             task = bot.loop.create_task(study_timer(member))
             study_tasks[member.id] = task
 
