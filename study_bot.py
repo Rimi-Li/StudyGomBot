@@ -158,18 +158,17 @@ def get_time(user_id, channel, today_only=False):
     rows = db_execute(query, tuple(params), fetch=True)
     total = 0 if not rows or rows[0][0] is None else rows[0][0]
 
-    active_rows = db_execute("""
-        SELECT start, channel
-        FROM active_sessions
-        WHERE user_id=%s
-    """, (user_id,), fetch=True)
+    session = active_sessions.get(user_id)
 
-    if active_rows:
-        start_time, active_channel = active_rows[0]
-        start_time = start_time.replace(tzinfo=KST)
+    if session:
+        start_time = session["start"]
 
-        if active_channel == channel and start_time.date() == now().date():
-            total += int((now() - start_time).total_seconds())
+        if start_time.tzinfo is None:
+            start_time = start_time.replace(tzinfo=KST)
+
+        if session["channel"] == channel:
+            if not today_only or start_time.date() == now().date():
+                total += int((now() - start_time).total_seconds())
 
     return total
 
