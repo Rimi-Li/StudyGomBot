@@ -348,7 +348,7 @@ async def send_user_time(ctx, user_name):
         await ctx.send("사용자를 찾지 못했습니다.")
         return
 
-    study = get_time(member.id, STUDY_CHANNEL_NAME)
+    study = get_time(member.id, STUDY_CHANNEL_NAME, True)
     rest = get_time(member.id, REST_CHANNEL_NAME, True)
 
     await ctx.send(
@@ -367,7 +367,7 @@ async def 지금(ctx):
         if not member:
             continue
 
-        study = get_time(member.id, STUDY_CHANNEL_NAME)
+        study = get_time(member.id, STUDY_CHANNEL_NAME, True)
         rest = get_time(member.id, REST_CHANNEL_NAME, True)
 
         lines.append(
@@ -469,9 +469,12 @@ async def reset_user_today(ctx, user_name):
         WHERE user_id=%s AND date=%s
     """, (member.id, today))
 
+    active_sessions.pop(member.id, None)
+    db_execute("DELETE FROM active_sessions WHERE user_id=%s", (member.id,))
+
     study_alerts[user_name].clear()
 
-    study = get_time(member.id, STUDY_CHANNEL_NAME)
+    study = get_time(member.id, STUDY_CHANNEL_NAME, True)
     rest = get_time(member.id, REST_CHANNEL_NAME, True)
 
     await ctx.send(
@@ -511,7 +514,7 @@ async def 초기화(ctx):
         if not member:
             continue
 
-        study = get_time(member.id, STUDY_CHANNEL_NAME)
+        study = get_time(member.id, STUDY_CHANNEL_NAME, True)
         rest = get_time(member.id, REST_CHANNEL_NAME, True)
 
         msg.append(
@@ -544,7 +547,7 @@ async def 초기화취소(ctx):
         if not member:
             continue
 
-        study = get_time(member.id, STUDY_CHANNEL_NAME)
+        study = get_time(member.id, STUDY_CHANNEL_NAME, True)
         rest = get_time(member.id, REST_CHANNEL_NAME, True)
 
         msg.append(
@@ -603,7 +606,7 @@ async def midnight_ranking():
         if not member:
             continue
 
-        study = get_time(member.id, STUDY_CHANNEL_NAME)
+        study = get_time(member.id, STUDY_CHANNEL_NAME, True)
         rest = get_time(member.id, REST_CHANNEL_NAME, True)
 
         result.append((name, study, rest))
