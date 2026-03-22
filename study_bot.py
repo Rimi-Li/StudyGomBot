@@ -56,18 +56,15 @@ study_tasks = {}
 def now():
     return datetime.now(KST)
 
-
 def format_time(sec):
     h = sec // 3600
     m = (sec % 3600) // 60
     s = sec % 60
+    return f"{h}: {m:02d}: {s:02d}"
 
-    if h == 0 and m == 0:
-        return f"{s:02d}초"
-    if h == 0:
-        return f"{m:02d}분 {s:02d}초"
-    return f"{h}시간 {m:02d}분 {s:02d}초"
-
+def format_total_line(user_name, study, rest):
+    total = study + rest
+    return f"{user_name} ⏱️ 접속 {format_time(total)} ( 📖 열공 {format_time(study)} / ☘️ 휴식 {format_time(rest)} )"
 
 def get_text_channel(guild):
     for ch in guild.text_channels:
@@ -203,10 +200,15 @@ async def end_session(member):
     total = get_time(user_id, channel, True)
     ch = get_text_channel(member.guild)
 
-    await ch.send(
-        f"{user_name} {channel} {format_time(duration)} 기록 (누적: {format_time(total)})"
-    )
+    if channel == STUDY_CHANNEL_NAME:
+        await ch.send(
+            f"{user_name} 📖 열공 + {format_time(duration)} ( = {format_time(total)} )"
+        )
 
+    elif channel == REST_CHANNEL_NAME:
+        await ch.send(
+            f"{user_name} ☘️ 휴식 + {format_time(duration)} ( = {format_time(total)} )"
+        )
 
 def start_session(member, channel_name, start_time):
     active_sessions[member.id] = {
@@ -365,16 +367,13 @@ async def send_user_time(ctx, user_name):
     member = get_member_by_display_name(ctx.guild, user_name)
 
     if not member:
-        await ctx.send("사용자를 찾지 못했습니다.")
+        await ctx.send("사용자를 찾지 못했다 곰.")
         return
 
     study = get_time(member.id, STUDY_CHANNEL_NAME, True)
     rest = get_time(member.id, REST_CHANNEL_NAME, True)
 
-    await ctx.send(
-        f"""{user_name} | 📖 열공 {format_time(study)} | ☘️ 휴식 {format_time(rest)} |"""
-    )
-
+    await ctx.send(format_total_line(user_name, study, rest))
 
 @bot.command()
 async def 지금(ctx):
@@ -388,9 +387,7 @@ async def 지금(ctx):
         study = get_time(member.id, STUDY_CHANNEL_NAME, True)
         rest = get_time(member.id, REST_CHANNEL_NAME, True)
 
-        lines.append(
-            f"{name} | 📖 열공 {format_time(study)} | ☘️ 휴식 {format_time(rest)}"
-        )
+        lines.append(format_total_line(name, study, rest))
 
     if not lines:
         await ctx.send("대상 사용자를 찾지 못했다 곰")
@@ -440,7 +437,7 @@ async def 삭제(ctx):
     total = get_time(user_id, channel, True)
 
     await ctx.send(
-        f"⛔기록 삭제 완료\n>> {user_name} {channel} {format_time(total)} (누적)"
+        f"⛔기록 삭제 완료\n>> {user_name} {channel} - {format_time(duration)} ( = {format_time(total)} )"
     )
 
 
@@ -462,7 +459,7 @@ async def 복구(ctx):
     total = get_time(user_id, channel, True)
 
     await ctx.send(
-        f"♻️기록 복구 완료\n>> {user_name} {channel} {format_time(duration)} (누적 {format_time(total)})"
+        f"♻️기록 복구 완료\n>> {user_name} {channel} + {format_time(duration)} ( = {format_time(total)} )"
     )
 
 # 초기화
@@ -497,9 +494,8 @@ async def reset_user_today(ctx, user_name):
 
     await ctx.send(
         f"""⚠️ {user_name} 오늘 기록이 초기화되었다 곰
-{user_name} | 📖 열공 {format_time(study)} | ☘️ 휴식 {format_time(rest)}"""
+{format_total_line(user_name, study, rest)}"""
     )
-
 
 @bot.command()
 async def 멜마초기화(ctx):
@@ -535,9 +531,7 @@ async def 초기화(ctx):
         study = get_time(member.id, STUDY_CHANNEL_NAME, True)
         rest = get_time(member.id, REST_CHANNEL_NAME, True)
 
-        msg.append(
-            f"{name} | 📖 열공 {format_time(study)} | ☘️ 휴식 {format_time(rest)}"
-        )
+        msg.append(format_total_line(name, study, rest))
 
     await ctx.send("\n".join(msg))
 
@@ -568,9 +562,7 @@ async def 초기화취소(ctx):
         study = get_time(member.id, STUDY_CHANNEL_NAME, True)
         rest = get_time(member.id, REST_CHANNEL_NAME, True)
 
-        msg.append(
-            f"{name} | 📖 열공 {format_time(study)} | ☘️ 휴식 {format_time(rest)}"
-        )
+        msg.append(format_total_line(name, study, rest))
 
     await ctx.send("\n".join(msg))
 
@@ -614,18 +606,18 @@ async def midnight_ranking():
     rest_icons = ["🐢", "🦥"]
 
     msg = []
-    msg.append("═══ 오늘의 공부 랭킹 ═══\n")
+    msg.append("═ 오늘의 공부 랭킹 ═\n")
 
     for i, (name, study, _) in enumerate(study_rank):
-        msg.append(f"{medals[i]} {name} : {format_time(study)}")
+        msg.append(f"{medals[i]} {name} {format_time(study)}")
 
-    msg.append("\n══════════════\n")
-    msg.append("═══ 오늘의 휴식 랭킹 ═══\n")
+    msg.append("\n══════════\n")
+    msg.append("═ 오늘의 휴식 랭킹 ═\n")
 
     for i, (name, _, rest) in enumerate(rest_rank):
-        msg.append(f"{rest_icons[i]} {name} : {format_time(rest)}")
+        msg.append(f"{rest_icons[i]} {name} {format_time(rest)}")
 
-    msg.append("\n══════════════")
+    msg.append("\n══════════")
 
     winner = study_rank[0][0]
     msg.append(f"\n오늘 공부왕은~~~ 👑{winner}! 축하한다 곰~! 🐻🎉")
