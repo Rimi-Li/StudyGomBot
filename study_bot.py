@@ -507,7 +507,6 @@ async def 멜마초기화(ctx):
 async def 배키초기화(ctx):
     await reset_user_today(ctx, "배키")
 
-
 @bot.command()
 async def 초기화(ctx):
     global last_reset_backup
@@ -520,8 +519,25 @@ async def 초기화(ctx):
         WHERE date=%s
     """, (today,), fetch=True)
 
+    # 1. DB 기록 삭제
     db_execute("DELETE FROM study_logs WHERE date=%s", (today,))
 
+    # 2. 세션 초기화
+    active_sessions.clear()
+    db_execute("DELETE FROM active_sessions")
+
+    # 3. 현재 접속자 다시 측정 시작
+    for member in ctx.guild.members:
+        if member.bot:
+            continue
+
+        if member.voice and member.voice.channel:
+            channel_name = member.voice.channel.name
+
+            if channel_name in TRACK_CHANNELS:
+                start_session(member, channel_name, now())
+
+    # 4. 메시지 출력
     msg = ["⚠️ 오늘 전체 기록이 초기화되었다 곰"]
 
     for name in TARGET_USERS:
@@ -535,7 +551,6 @@ async def 초기화(ctx):
         msg.append(format_total_line(name, study, rest))
 
     await ctx.send("\n".join(msg))
-
 
 @bot.command()
 async def 초기화취소(ctx):
