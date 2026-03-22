@@ -495,7 +495,7 @@ async def reset_user_today(ctx, user_name):
 
     await ctx.send(
         f"""⚠️ {user_name} 오늘 기록이 초기화되었다 곰
-{format_total_line(user_name, study, rest)}"""
+{format_total_line(user_name, 0, 0)}"""
     )
 
 @bot.command()
