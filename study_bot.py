@@ -538,19 +538,10 @@ async def 초기화(ctx):
                 start_session(member, channel_name, now())
 
     # 4. 메시지 출력
-    msg = ["⚠️ 오늘 전체 기록이 초기화되었다 곰"]
-
-    for name in TARGET_USERS:
-        member = get_member_by_display_name(ctx.guild, name)
-        if not member:
-            continue
-
-        study = get_time(member.id, STUDY_CHANNEL_NAME, True)
-        rest = get_time(member.id, REST_CHANNEL_NAME, True)
-
-        msg.append(format_total_line(name, study, rest))
-
-    await ctx.send("\n".join(msg))
+    await ctx.send(
+        "⚠️ 오늘 전체 기록이 초기화되었다 곰\n" +
+        "\n".join(format_total_line(name, 0, 0) for name in TARGET_USERS)
+    )
 
 @bot.command()
 async def 초기화취소(ctx):
