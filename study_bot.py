@@ -37,6 +37,8 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 # 런타임 상태
 active_sessions = {}
 
+today_study_started = set()
+
 last_log = None
 last_deleted_log = None
 last_reset_backup = None
@@ -299,14 +301,18 @@ async def handle_channel_entry(member, channel_name, send_study_start_message=Fa
     start_session(member, channel_name, started_at)
 
     if channel_name == STUDY_CHANNEL_NAME and send_study_start_message:
-        ch = get_text_channel(member.guild)
-        await ch.send(
-            f"{member.display_name} 공부 시작! 📚\n오늘 목표까지 달려보자 곰! 🐻🔥"
-        )
-        await check_study_milestone(member)
+        today_key = (member.id, now().date())
+
+        if today_key not in today_study_started:
+            today_study_started.add(today_key)
+
+            ch = get_text_channel(member.guild)
+            await ch.send(
+                f"{member.display_name} 공부 시작! 📚\n오늘 목표까지 달려보자 곰! 🐻🔥"
+            )
+            await check_study_milestone(member)
 
     create_channel_task(member, channel_name)
-
 
 async def handle_channel_exit(member):
     cancel_task(study_tasks, member.id)
@@ -314,31 +320,37 @@ async def handle_channel_exit(member):
     await end_session(member)
 
 # 음성 상태 이벤트
+@tasks.loop(time=datetime.time(hour=0, minute=0, tzinfo=KST))
+async def reset_daily_flags():
+    today_study_started.clear()
+
 @bot.event
 async def on_voice_state_update(member, before, after):
     if member.bot:
         return
 
-    before_name = before.channel.name if before.channel else None
-    after_name = after.channel.name if after.channel else None
+    before_channel = before.channel
+    after_channel = after.channel
 
-    entered_track_channel = before_name not in TRACK_CHANNELS and after_name in TRACK_CHANNELS
-    moved_between_track_channels = before_name in TRACK_CHANNELS and after_name in TRACK_CHANNELS
-    exited_track_channel = before_name in TRACK_CHANNELS and after_name not in TRACK_CHANNELS
+    # ⭐ 핵심: 채널 변화 없으면 무시 (화면공유, 음소거 등)
+    if before_channel == after_channel:
+        return
 
-    if entered_track_channel:
-        await handle_channel_entry(
-            member,
-            after_name,
-            send_study_start_message=(after_name == STUDY_CHANNEL_NAME)
-        )
+    before_name = before_channel.name if before_channel else None
+    after_name = after_channel.name if after_channel else None
 
-    elif moved_between_track_channels:
-        await handle_channel_exit(member)
-        await handle_channel_entry(member, after_name, send_study_start_message=False)
+    # 입장
+    if before_name not in TRACK_CHANNELS and after_name in TRACK_CHANNELS:
+        await handle_channel_entry(member, after_name, send_study_start_message=True)
 
-    elif exited_track_channel:
-        await handle_channel_exit(member)
+    # 채널 이동
+    elif before_name in TRACK_CHANNELS and after_name in TRACK_CHANNELS:
+        await end_session(member)
+        await handle_channel_entry(member, after_name)
+
+    # 퇴장
+    elif before_name in TRACK_CHANNELS and after_name not in TRACK_CHANNELS:
+        await end_session(member)
 
 # 조회 명령어
 async def send_user_time(ctx, user_name):
@@ -643,6 +655,7 @@ async def night_message():
 # 봇 시작
 @bot.event
 async def on_ready():
+    reset_daily_flags.start()
     print("안녕! 난 Study_Gom이다 곰! 🐻")
 
     init_db()
