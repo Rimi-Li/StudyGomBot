@@ -301,7 +301,15 @@ async def handle_channel_entry(member, channel_name, send_study_start_message=Fa
     start_session(member, channel_name, started_at)
 
     if channel_name == STUDY_CHANNEL_NAME and send_study_start_message:
-        today_key = (member.id, now().date())
+
+        global today_date
+
+        # 날짜 바뀌면 자동 초기화
+        if now().date() != today_date:
+            today_study_started.clear()
+            today_date = now().date()
+
+        today_key = member.id  # 날짜 제거
 
         if today_key not in today_study_started:
             today_study_started.add(today_key)
@@ -332,7 +340,7 @@ async def on_voice_state_update(member, before, after):
     before_channel = before.channel
     after_channel = after.channel
 
-    # ⭐ 핵심: 채널 변화 없으면 무시 (화면공유, 음소거 등)
+    # 핵심: 채널 변화 없으면 무시 (화면공유, 음소거 등)
     if before_channel == after_channel:
         return
 
