@@ -1,7 +1,7 @@
 import os
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 from zoneinfo import ZoneInfo
 from urllib.parse import urlparse, unquote
 
@@ -38,6 +38,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 active_sessions = {}
 
 today_study_started = set()
+today_date = datetime.now(KST).date()
 
 last_log = None
 last_deleted_log = None
@@ -330,7 +331,7 @@ async def handle_channel_exit(member):
     await end_session(member)
 
 # 음성 상태 이벤트
-@tasks.loop(time=datetime.time(hour=0, minute=0, tzinfo=KST))
+@tasks.loop(time=time(hour=0, minute=0, tzinfo=KST))
 async def reset_daily_flags():
     today_study_started.clear()
 
