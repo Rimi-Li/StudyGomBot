@@ -263,6 +263,12 @@ async def check_study_milestone(member):
 해냈다!! 오늘의 {user}는 엄청나다 곰..!!!"""
         )
 
+    if study >= 43200 and 12 not in alerts:
+        alerts.add(12)
+        await ch.send(
+            f"""{user} 12시간 집중 성곰!!! 🐻🎉
+이제 나도 인정한다 곰.. 👑{user}👑는 오늘 누구도 막을 수 없다 곰!!!"""
+        )
 
 async def study_timer(member):
     while member.id in active_sessions:
