@@ -334,6 +334,7 @@ async def handle_channel_exit(member):
 @tasks.loop(time=time(hour=0, minute=0, tzinfo=KST))
 async def reset_daily_flags():
     today_study_started.clear()
+    study_alerts.clear()
 
 @bot.event
 async def on_voice_state_update(member, before, after):
@@ -526,6 +527,8 @@ async def 초기화(ctx):
     active_sessions.clear()
     db_execute("DELETE FROM active_sessions")
 
+    study_alerts.clear()
+
     # 3. 현재 접속자 다시 측정 시작
     for member in ctx.guild.members:
         if member.bot:
@@ -631,8 +634,6 @@ async def midnight_ranking():
 
     ch = get_text_channel(guild)
     await ch.send("\n".join(msg))
-
-    study_alerts.clear()
 
 # 정시 메시지
 @tasks.loop(minutes=1)
