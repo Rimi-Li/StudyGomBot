@@ -673,8 +673,7 @@ async def on_ready():
     print("안녕! 난 Study_Gom이다 곰! 🐻")
 
     init_db()
-
-    db_execute("DELETE FROM active_sessions")
+    
     active_sessions.clear()
 
     if not midnight_ranking.is_running():
