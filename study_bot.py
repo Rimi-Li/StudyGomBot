@@ -176,19 +176,11 @@ def get_time(user_id, channel, today_only=False):
 async def end_session(member):
     global last_log
 
-    rows = db_execute("""
-        DELETE FROM active_sessions
-        WHERE user_id=%s
-        RETURNING user_id, user_name, channel, start
-    """, (member.id,), fetch=True)
-
-    active_sessions.pop(member.id, None)
-
-    if not rows:
+    session = active_sessions.pop(member.id, None)
+    if not session:
         return
 
-    user_id, user_name, channel, start = rows[0]
-
+    start = session["start"]
     if start.tzinfo is None:
         start = start.replace(tzinfo=KST)
 
@@ -196,9 +188,13 @@ async def end_session(member):
     if duration <= 0:
         return
 
-    date = start.date().isoformat()
+    user_id = session["user_id"]
+    user_name = session["name"]
+    channel = session["channel"]
+    date = session["start"].date().isoformat()
 
     save_log(user_id, user_name, channel, duration, date)
+    db_execute("DELETE FROM active_sessions WHERE user_id=%s", (user_id,))
 
     last_log = (user_id, user_name, channel, duration, date)
 
@@ -206,10 +202,14 @@ async def end_session(member):
     ch = get_text_channel(member.guild)
 
     if channel == STUDY_CHANNEL_NAME:
-        await ch.send(f"{user_name} 📖 열공 + {format_time(duration)} ( = {format_time(total)} )")
+        await ch.send(
+            f"{user_name} 📖 열공 + {format_time(duration)} ( = {format_time(total)} )"
+        )
 
     elif channel == REST_CHANNEL_NAME:
-        await ch.send(f"{user_name} ☘️ 휴식 + {format_time(duration)} ( = {format_time(total)} )")
+        await ch.send(
+            f"{user_name} ☘️ 휴식 + {format_time(duration)} ( = {format_time(total)} )"
+        )
 
 def start_session(member, channel_name, start_time):
     active_sessions[member.id] = {
@@ -674,6 +674,7 @@ async def on_ready():
 
     init_db()
     
+    db_execute("DELETE FROM active_sessions")
     active_sessions.clear()
 
     if not midnight_ranking.is_running():
