@@ -137,6 +137,7 @@ def init_db():
 
 # 시간 / 기록 관련
 def save_log(user_id, user_name, channel, seconds, date):
+    print("SAVE LOG:", user_name, channel, seconds)
     db_execute("""
         INSERT INTO study_logs (user_id, user_name, channel, duration, date)
         VALUES (%s, %s, %s, %s, %s)
@@ -174,7 +175,6 @@ def get_time(user_id, channel, today_only=False):
 
 
 async def end_session(member):
-    print("END SESSION")
     global last_log
 
     session = active_sessions.pop(member.id, None)
@@ -203,11 +203,13 @@ async def end_session(member):
     ch = get_text_channel(member.guild)
 
     if channel == STUDY_CHANNEL_NAME:
+        print("SEND MESSAGE:", user_name, channel, duration)
         await ch.send(
             f"{user_name} 📖 열공 + {format_time(duration)} ( = {format_time(total)} )"
         )
 
     elif channel == REST_CHANNEL_NAME:
+        print("SEND MESSAGE:", user_name, channel, duration)
         await ch.send(
             f"{user_name} ☘️ 휴식 + {format_time(duration)} ( = {format_time(total)} )"
         )
