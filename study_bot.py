@@ -203,13 +203,11 @@ async def end_session(member):
     ch = get_text_channel(member.guild)
 
     if channel == STUDY_CHANNEL_NAME:
-        print("SEND MESSAGE:", user_name, channel, duration)
         await ch.send(
             f"{user_name} 📖 열공 + {format_time(duration)} ( = {format_time(total)} )"
         )
 
     elif channel == REST_CHANNEL_NAME:
-        print("SEND MESSAGE:", user_name, channel, duration)
         await ch.send(
             f"{user_name} ☘️ 휴식 + {format_time(duration)} ( = {format_time(total)} )"
         )
