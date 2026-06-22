@@ -174,6 +174,7 @@ def get_time(user_id, channel, today_only=False):
 
 
 async def end_session(member):
+    print("END SESSION")
     global last_log
 
     session = active_sessions.pop(member.id, None)
