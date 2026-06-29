@@ -522,7 +522,7 @@ async def on_message(message):
 
     if not seconds:
         await message.channel.send(
-            "🚨형식이 틀렸다 곰! (예: !멜마열공+1시간30분 or !배키휴식-30분)"
+            "🚨형식이 틀렸다 곰! (예: !멜마열공+1시간30분 / !배키휴식-30분)"
         )
         return
 
