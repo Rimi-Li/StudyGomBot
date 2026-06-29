@@ -491,64 +491,69 @@ async def on_message(message):
     if message.author.bot:
         return
 
-    # 시간 추가
-    if message.content.startswith("!+"):
-        text = message.content.replace("!+", "")
+    if message.content.startswith("!열공+"):
+        channel = STUDY_CHANNEL_NAME
+        sign = 1
+        text = message.content.replace("!열공+", "")
 
-        seconds = parse_time(text)
+    elif message.content.startswith("!열공-"):
+        channel = STUDY_CHANNEL_NAME
+        sign = -1
+        text = message.content.replace("!열공-", "")
 
-        if not seconds:
-            await message.channel.send("🚨형식이 틀렸다 곰! (예: !+1시간30분)")
+    elif message.content.startswith("!휴식+"):
+        channel = REST_CHANNEL_NAME
+        sign = 1
+        text = message.content.replace("!휴식+", "")
+
+    elif message.content.startswith("!휴식-"):
+        channel = REST_CHANNEL_NAME
+        sign = -1
+        text = message.content.replace("!휴식-", "")
+
+    else:
+        # 기존 !명령어 실행 유지
+        await bot.process_commands(message)
+        return
+
+    seconds = parse_time(text)
+
+    if not seconds:
+        await message.channel.send(
+            "🚨형식이 틀렸다 곰! (예: !열공+1시간30분 / !휴식-30분)"
+        )
+        return
+
+    total = get_time(message.author.id, channel, True)
+
+    if sign == -1:
+        if seconds > total:
+            await message.channel.send("삭제할 시간이 현재 기록보다 많다 곰.")
             return
-
         save_log(
             message.author.id,
             message.author.display_name,
-            STUDY_CHANNEL_NAME,
+            channel,
+            -seconds,
+            now().date().isoformat()
+        )
+    else:
+        save_log(
+            message.author.id,
+            message.author.display_name,
+            channel,
             seconds,
             now().date().isoformat()
         )
 
-        total = get_time(message.author.id, STUDY_CHANNEL_NAME, True)
+    total = get_time(message.author.id, channel, True)
 
-        await message.channel.send(
-            f"{message.author.display_name} 📖 열공 + {format_time(seconds)} ( = {format_time(total)} )"
-        )
-        return
+    icon = "📖" if channel == STUDY_CHANNEL_NAME else "☘️"
+    name = "열공" if channel == STUDY_CHANNEL_NAME else "휴식"
+    op = "+" if sign == 1 else "-"
 
-    # 시간 차감
-    if message.content.startswith("!-"):
-        text = message.content.replace("!-", "")
-
-        seconds = parse_time(text)
-
-        if not seconds:
-            await message.channel.send("🚨형식이 틀렸다 곰! (예: !-1시간30분)")
-            return
-
-        study = get_time(message.author.id, STUDY_CHANNEL_NAME, True)
-
-        if seconds > study:
-            await message.channel.send("삭제할 시간이 현재 공부 시간보다 많다 곰.")
-            return
-
-        save_log(
-            message.author.id,
-            message.author.display_name,
-            STUDY_CHANNEL_NAME,
-            -seconds,
-            now().date().isoformat()
-        )
-
-        total = get_time(message.author.id, STUDY_CHANNEL_NAME, True)
-
-        await message.channel.send(
-            f"{message.author.display_name} 📖 열공 - {format_time(seconds)} ( = {format_time(total)} )"
-        )
-        return
-
-    # 기존 !명령어 실행 유지
-    await bot.process_commands(message)
+    await message.channel.send(
+        f"{message.author.display_name} {icon} {name} {op} {format_time(abs(seconds))} ( = {format_time(total)} )"
     )
 
 # 초기화
