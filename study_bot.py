@@ -486,58 +486,69 @@ async def 복구(ctx):
     )
 
 # 시간 추가/차감
-@bot.command(name="+")
-async def 추가(ctx):
-    text = ctx.message.content.replace("!+", "")
-
-    seconds = parse_time(text)
-
-    if not seconds:
-        await ctx.send("🚨형식이 틀렸다 곰! (예: !-1시간30분)")
-        return
-        
-    save_log(
-        ctx.author.id,
-        ctx.author.display_name,
-        STUDY_CHANNEL_NAME,
-        seconds,
-        now().date().isoformat()
-    )
-
-    total = get_time(ctx.author.id, STUDY_CHANNEL_NAME, True)
-
-    await ctx.send(
-        f"{ctx.author.display_name} 📖 열공 + {format_time(seconds)} ( = {format_time(total)} )"
-    )
-
-@bot.command(name="-")
-async def 차감(ctx):
-    text = ctx.message.content.replace("!-", "")
-
-    seconds = parse_time(text)
-
-    if not seconds:
-        await ctx.send("🚨형식이 틀렸다 곰! (예: !-1시간30분)")
+@bot.event
+async def on_message(message):
+    if message.author.bot:
         return
 
-    study = get_time(ctx.author.id, STUDY_CHANNEL_NAME, True)
+    # 시간 추가
+    if message.content.startswith("!+"):
+        text = message.content.replace("!+", "")
 
-    if seconds > study:
-        await ctx.send("삭제할 시간이 현재 공부 시간보다 많다 곰.")
+        seconds = parse_time(text)
+
+        if not seconds:
+            await message.channel.send("🚨형식이 틀렸다 곰! (예: !+1시간30분)")
+            return
+
+        save_log(
+            message.author.id,
+            message.author.display_name,
+            STUDY_CHANNEL_NAME,
+            seconds,
+            now().date().isoformat()
+        )
+
+        total = get_time(message.author.id, STUDY_CHANNEL_NAME, True)
+
+        await message.channel.send(
+            f"{message.author.display_name} 📖 열공 + {format_time(seconds)} ( = {format_time(total)} )"
+        )
         return
 
-    save_log(
-        ctx.author.id,
-        ctx.author.display_name,
-        STUDY_CHANNEL_NAME,
-        -seconds,
-        now().date().isoformat()
-    )
+    # 시간 차감
+    if message.content.startswith("!-"):
+        text = message.content.replace("!-", "")
 
-    total = get_time(ctx.author.id, STUDY_CHANNEL_NAME, True)
+        seconds = parse_time(text)
 
-    await ctx.send(
-        f"{ctx.author.display_name} 📖 열공 - {format_time(seconds)} ( = {format_time(total)} )"
+        if not seconds:
+            await message.channel.send("🚨형식이 틀렸다 곰! (예: !-1시간30분)")
+            return
+
+        study = get_time(message.author.id, STUDY_CHANNEL_NAME, True)
+
+        if seconds > study:
+            await message.channel.send("삭제할 시간이 현재 공부 시간보다 많다 곰.")
+            return
+
+        save_log(
+            message.author.id,
+            message.author.display_name,
+            STUDY_CHANNEL_NAME,
+            -seconds,
+            now().date().isoformat()
+        )
+
+        total = get_time(message.author.id, STUDY_CHANNEL_NAME, True)
+
+        await message.channel.send(
+            f"{message.author.display_name} 📖 열공 - {format_time(seconds)} ( = {format_time(total)} )"
+        )
+        return
+
+    # 기존 !명령어 실행 유지
+    await bot.process_commands(message)
     )
 
 # 초기화
