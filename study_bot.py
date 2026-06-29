@@ -1,4 +1,5 @@
 import os
+import re
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from datetime import datetime, timedelta, time
@@ -66,6 +67,20 @@ def format_time(sec):
 def format_total_line(user_name, study, rest):
     total = study + rest
     return f"{user_name} ⏱️ 접속 {format_time(total)} ( 📖 열공 {format_time(study)} / ☘️ 휴식 {format_time(rest)} )"
+
+def parse_time(text):
+    match = re.match(r"(?:(\d+)시간)?(?:(\d+)분)?$", text)
+
+    if not match:
+        return None
+
+    hours = int(match.group(1) or 0)
+    minutes = int(match.group(2) or 0)
+
+    if hours == 0 and minutes == 0:
+        return None
+
+    return hours * 3600 + minutes * 60
 
 def get_text_channel(guild):
     for ch in guild.text_channels:
@@ -414,7 +429,7 @@ async def 멜마(ctx):
 async def 배키(ctx):
     await send_user_time(ctx, "배키")
 
-# 삭제 / 복구
+# 최근 기록 삭제/복구
 @bot.command()
 async def 삭제(ctx):
     global last_log, last_deleted_log
@@ -449,7 +464,6 @@ async def 삭제(ctx):
         f"⛔기록 삭제 완료\n>> {user_name} {channel} - {format_time(duration)} ( = {format_time(total)} )"
     )
 
-
 @bot.command()
 async def 복구(ctx):
     global last_deleted_log, last_log
@@ -469,6 +483,61 @@ async def 복구(ctx):
 
     await ctx.send(
         f"♻️기록 복구 완료\n>> {user_name} {channel} + {format_time(duration)} ( = {format_time(total)} )"
+    )
+
+# 시간 추가/차감
+@bot.command(name="+")
+async def 추가(ctx):
+    text = ctx.message.content.replace("!+", "")
+
+    seconds = parse_time(text)
+
+    if not seconds:
+        await ctx.send("🚨형식이 틀렸다 곰! (예: !-1시간30분)")
+        return
+        
+    save_log(
+        ctx.author.id,
+        ctx.author.display_name,
+        STUDY_CHANNEL_NAME,
+        seconds,
+        now().date().isoformat()
+    )
+
+    total = get_time(ctx.author.id, STUDY_CHANNEL_NAME, True)
+
+    await ctx.send(
+        f"{ctx.author.display_name} 📖 열공 + {format_time(seconds)} ( = {format_time(total)} )"
+    )
+
+@bot.command(name="-")
+async def 차감(ctx):
+    text = ctx.message.content.replace("!-", "")
+
+    seconds = parse_time(text)
+
+    if not seconds:
+        await ctx.send("🚨형식이 틀렸다 곰! (예: !-1시간30분)")
+        return
+
+    study = get_time(ctx.author.id, STUDY_CHANNEL_NAME, True)
+
+    if seconds > study:
+        await ctx.send("삭제할 시간이 현재 공부 시간보다 많다 곰.")
+        return
+
+    save_log(
+        ctx.author.id,
+        ctx.author.display_name,
+        STUDY_CHANNEL_NAME,
+        -seconds,
+        now().date().isoformat()
+    )
+
+    total = get_time(ctx.author.id, STUDY_CHANNEL_NAME, True)
+
+    await ctx.send(
+        f"{ctx.author.display_name} 📖 열공 - {format_time(seconds)} ( = {format_time(total)} )"
     )
 
 # 초기화
