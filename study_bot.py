@@ -491,69 +491,73 @@ async def on_message(message):
     if message.author.bot:
         return
 
-    if message.content.startswith("!열공+"):
-        channel = STUDY_CHANNEL_NAME
-        sign = 1
-        text = message.content.replace("!열공+", "")
+    commands = {
+        "!멜마열공+": ("멜마", STUDY_CHANNEL_NAME, 1),
+        "!멜마열공-": ("멜마", STUDY_CHANNEL_NAME, -1),
+        "!멜마휴식+": ("멜마", REST_CHANNEL_NAME, 1),
+        "!멜마휴식-": ("멜마", REST_CHANNEL_NAME, -1),
 
-    elif message.content.startswith("!열공-"):
-        channel = STUDY_CHANNEL_NAME
-        sign = -1
-        text = message.content.replace("!열공-", "")
+        "!배키열공+": ("배키", STUDY_CHANNEL_NAME, 1),
+        "!배키열공-": ("배키", STUDY_CHANNEL_NAME, -1),
+        "!배키휴식+": ("배키", REST_CHANNEL_NAME, 1),
+        "!배키휴식-": ("배키", REST_CHANNEL_NAME, -1),
+    }
 
-    elif message.content.startswith("!휴식+"):
-        channel = REST_CHANNEL_NAME
-        sign = 1
-        text = message.content.replace("!휴식+", "")
-
-    elif message.content.startswith("!휴식-"):
-        channel = REST_CHANNEL_NAME
-        sign = -1
-        text = message.content.replace("!휴식-", "")
-
+    for prefix, (user_name, channel, sign) in commands.items():
+        if message.content.startswith(prefix):
+            text = message.content.replace(prefix, "")
+            break
     else:
         # 기존 !명령어 실행 유지
         await bot.process_commands(message)
+        return
+
+    member = get_member_by_display_name(message.guild, user_name)
+
+    if not member:
+        await message.channel.send("사용자를 찾지 못했다 곰.")
         return
 
     seconds = parse_time(text)
 
     if not seconds:
         await message.channel.send(
-            "🚨형식이 틀렸다 곰! (예: !열공+1시간30분 / !휴식-30분)"
+            "🚨형식이 틀렸다 곰! (예: !멜마열공+1시간30분 or !배키휴식-30분)"
         )
         return
 
-    total = get_time(message.author.id, channel, True)
+    total = get_time(member.id, channel, True)
 
     if sign == -1:
         if seconds > total:
             await message.channel.send("삭제할 시간이 현재 기록보다 많다 곰.")
             return
+
         save_log(
-            message.author.id,
-            message.author.display_name,
+            member.id,
+            member.display_name,
             channel,
             -seconds,
             now().date().isoformat()
         )
+
     else:
         save_log(
-            message.author.id,
-            message.author.display_name,
+            member.id,
+            member.display_name,
             channel,
             seconds,
             now().date().isoformat()
         )
 
-    total = get_time(message.author.id, channel, True)
+    total = get_time(member.id, channel, True)
 
     icon = "📖" if channel == STUDY_CHANNEL_NAME else "☘️"
     name = "열공" if channel == STUDY_CHANNEL_NAME else "휴식"
     op = "+" if sign == 1 else "-"
 
     await message.channel.send(
-        f"{message.author.display_name} {icon} {name} {op} {format_time(abs(seconds))} ( = {format_time(total)} )"
+        f"{member.display_name} {icon} {name} {op} {format_time(abs(seconds))} ( = {format_time(total)} )"
     )
 
 # 초기화
